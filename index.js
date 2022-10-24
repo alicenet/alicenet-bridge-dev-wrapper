@@ -43,6 +43,13 @@ async function main() {
                 // console.log("SetIntervalMining", String(res));
             });
         }
+        if (data.toString().indexOf("Creating Folder at../scripts/generated since it didn't exist before!") !== -1) {
+            process.stdout.write(chalk.red("Files now generated, please run again!\n"));
+            deployerChild.kill('SIGINT');
+            hardhatChild.kill('SIGINT');
+            process.exit();
+        }
+
     });
 
     deployerChild.stderr.on('data', function (data) {
@@ -65,11 +72,17 @@ async function main() {
     // Go to bridge and deploy legacy
     deployerChild.stdin.write('cd alicenet/bridge\n');
     deployerChild.stdin.write("echo '\nDeploying legacy token contract and minting to admin[0]\n'\n");
+
+    deployerChild.stdin.write("echo 'Copy deploymentList to generated\n'\n");
+    deployerChild.stdin.write('rm -rf ../scripts/generated\n');
+    deployerChild.stdin.write('mkdir -p ../scripts/generated\n');
+    deployerChild.stdin.write('cp ../scripts/base-files/deploymentList ../scripts/generated/deploymentList\n');
+
     deployerChild.stdin.write('npx hardhat deploy-legacy-token-and-update-deployment-args --network dev\n');
     deployerChild.stdin.write("echo '\nDeploying all contracts...\n'\n");
-    deployerChild.stdin.write("npx hardhat deploy-contracts --wait-confirmation 0 --network dev\n");
-    deployerChild.stdin.write("echo '\nEnabling migration...\n'\n");
-    deployerChild.stdin.write("npx hardhat allow-migration --factory-address 0x77D7c620E3d913AA78a71acffA006fc1Ae178b66\n");
+    deployerChild.stdin.write("npx hardhat deploy-contracts --wait-confirmation 0 --input-folder ../scripts/generated --network dev\n");
+    // deployerChild.stdin.write("echo '\nEnabling migration...\n'\n");
+    // deployerChild.stdin.write("npx hardhat allow-migration --factory-address 0x77D7c620E3d913AA78a71acffA006fc1Ae178b66\n");
     deployerChild.stdin.write("echo '\n\nEnabling HH Output -- Development Node at Localhost:8545\n\n'\n",)
 
 }

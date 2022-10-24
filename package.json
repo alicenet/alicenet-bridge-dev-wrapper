@@ -4,7 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "ii": "npm i && cd alicenet/bridge && npm ci"
+    "postinstall": "cd alicenet/bridge && npm ci && npx hardhat compile && cd ../..",
+    "dev": "node index.js"
   },
   "author": "",
   "license": "ISC",
