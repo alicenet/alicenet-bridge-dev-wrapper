@@ -10,7 +10,4 @@ The goal is to supply a quick way to spin up a local environment for UI testing 
 1. Run a recursive clone of this directory:  
    `git clone git@github.com:alicenet/alicenet-eth-dev-wrapper.git --recursive`
 2. Run `npm run i`
-4. Run `node index.js`
-5. You will see an error about a script not existing, wait until you see it print the following line:  
-   `Creating Folder at../scripts/generated since it didn't exist before!`
-6. Kill the process and run `node index.js` again to start the environment
+3. Run `node index.js`
