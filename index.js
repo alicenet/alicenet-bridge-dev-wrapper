@@ -21,6 +21,10 @@ async function main() {
         if (!hhQuiet) {
             process.stdout.write(chalk.yellowBright(data.toString()));
         }
+        if (data.toString().indexOf("Account #12") !== -1) {
+            console.log(chalk.green("Hardhat ready -- Starting Deploy"));
+            deployContracts(deployerChild);
+        }
     });
 
     hardhatChild.stderr.on('data', function (data) {
@@ -65,29 +69,23 @@ async function main() {
     deployerChild.stdin.write("echo 'Quietly starting Local Hardhat Node...\n'\n");
     hardhatChild.stdin.write('cd alicenet/bridge\n');
     hardhatChild.stdin.write('npx hardhat node\n');
+    
+}
 
-    // Wait for hardhat to populate. . .
-    await wait(2000);
-
+function deployContracts(deployerChild) {
     // Go to bridge and deploy legacy
     deployerChild.stdin.write('cd alicenet/bridge\n');
     deployerChild.stdin.write("echo '\nDeploying legacy token contract and minting to admin[0]\n'\n");
-
     deployerChild.stdin.write("echo 'Copy deploymentList to generated\n'\n");
     deployerChild.stdin.write('rm -rf ../scripts/generated\n');
     deployerChild.stdin.write('mkdir -p ../scripts/generated\n');
     deployerChild.stdin.write('cp ../scripts/base-files/deploymentList ../scripts/generated/deploymentList\n');
-
     deployerChild.stdin.write('npx hardhat deploy-legacy-token-and-update-deployment-args --network dev\n');
     deployerChild.stdin.write("echo '\nDeploying all contracts...\n'\n");
     deployerChild.stdin.write("npx hardhat deploy-contracts --wait-confirmation 0 --input-folder ../scripts/generated --network dev\n");
-
-
     // Depoy Lock && Router 
     deployerChild.stdin.write('npx hardhat --network dev deploy-lockup-and-router --factory-address 0x77D7c620E3d913AA78a71acffA006fc1Ae178b66 --enrollment-period 1000 --lock-duration 6000 --total-bonus-amount 2000000\n')
     // Deploy BonusPool
     deployerChild.stdin.write('npx hardhat --network dev create-bonus-pool-position --factory-address 0x77D7c620E3d913AA78a71acffA006fc1Ae178b66\n')
-
     deployerChild.stdin.write("echo '\n\nEnabling HH Output -- Development Node at Localhost:8545\n\n'\n")
-
 }
