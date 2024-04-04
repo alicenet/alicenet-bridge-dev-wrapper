@@ -12,6 +12,15 @@ async function main() {
     let hhQuiet = true;
     let hardhatChild = spawn('bash');
     let deployerChild = spawn('bash');
+    let alcbDeployer = spawn('bash')
+    var publicStakingAddress = "";
+
+    function getPublicStakingAddres() {
+        return publicStakingAddress;
+    }
+    function setPublicStakingAddress(address) {
+        publicStakingAddress = address;
+    }
 
     console.log("NOTE: Hardhat Output will be", chalk.yellowBright("YELLOW\n"));
 
@@ -35,6 +44,13 @@ async function main() {
         console.log('hardhat_child process exited with code ' + code.toString());
     });
 
+    alcbDeployer.stdout.on('data', function (data) {
+        process.stdout.write(chalk.cyanBright(data.toString()));
+    })
+    alcbDeployer.stderr.on('data', function(data) {
+        console.log('alcbDeployer_stderr: ' + data.toString());
+    })
+    
     deployerChild.stdout.on('data', function (data) {
         process.stdout.write(chalk.greenBright(data.toString()));
         if (data.toString().indexOf("Enabling HH Output") !== -1) {
@@ -46,6 +62,9 @@ async function main() {
             provider.send("evm_setIntervalMining", [5000]).then(res => {
                 // console.log("SetIntervalMining", String(res));
             });
+            // Deploy New ALCB ontop of existing infra
+            process.stdout.write(chalk.yellowBright(`Deploying new ALCB with public staking address ${getPublicStakingAddres()}\n`));
+            alcbDeployer.stdin.write(`npx hardhat --network dev deployNewALCB ${getPublicStakingAddres()}\n`)
         }
         if (data.toString().indexOf("Creating Folder at../scripts/generated since it didn't exist before!") !== -1) {
             process.stdout.write(chalk.red("Files now generated, please run again!\n"));
@@ -53,7 +72,11 @@ async function main() {
             hardhatChild.kill('SIGINT');
             process.exit();
         }
-
+        if (data.toString().indexOf("Deployed PublicStaking") !== -1) {
+            const msg = data.toString();
+            setPublicStakingAddress(msg.split(" ")[5].replace(",", ""));
+            console.log("Public Staking Address Updated To: ", getPublicStakingAddres())
+        }
     });
 
     deployerChild.stderr.on('data', function (data) {
@@ -88,4 +111,5 @@ function deployContracts(deployerChild) {
     // Deploy BonusPool
     deployerChild.stdin.write('npx hardhat --network dev create-bonus-pool-position --factory-address 0x77D7c620E3d913AA78a71acffA006fc1Ae178b66\n')
     deployerChild.stdin.write("echo '\n\nEnabling HH Output -- Development Node at Localhost:8545\n\n'\n")
+
 }
